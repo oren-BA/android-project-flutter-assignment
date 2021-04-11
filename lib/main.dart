@@ -1,14 +1,22 @@
 import 'package:english_words/english_words.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:hello_me/auth_repository.dart';
+import 'package:provider/provider.dart';
 
-void main() => runApp(MyApp());
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(App());
+}
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Startup Name Generator',
+          title: 'Startup Name Generator',
       theme: ThemeData(
         // Add the 3 lines from here...
         primaryColor: Colors.red,
@@ -71,6 +79,8 @@ class _RandomWordsState extends State<RandomWords> {
   }
 
   void _pushLogin() {
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         // NEW lines from here...
@@ -80,51 +90,80 @@ class _RandomWordsState extends State<RandomWords> {
               title: Text('Login'),
               centerTitle: true,
             ),
-            body: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  Text(
-                      'Welcome to Startup Names Generator, please log in below',
-                      style: TextStyle(fontSize: 15)),
-                  SizedBox(height: 12),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: () {
+            body: ChangeNotifierProvider(
+              create: (context) => AuthRepository.instance(),
+              child: StreamBuilder(
+                stream: FirebaseAuth.instance.authStateChanges(),
+                builder: (context, snapshot){
+                  final user = FirebaseAuth.instance.currentUser;
+                  final authRep = AuthRepository.instance();
+                  if (snapshot.hasData){
+                    if(!authRep.isAuthenticated){
                       final snackBar = SnackBar(
-                        content: Text('Login is not implemented yet'),
+                        content: Text('Error with login info'),
                       );
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                    },
-                    child: Text('Log in'),
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(Colors.red),
-                      minimumSize: MaterialStateProperty.all<Size>(Size(300,30)),
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                          RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(40.0),
-                          )
-                      )
+                    } else{
+                      // Navigator.of(context).pop();
+                    }
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        Text(
+                            'Welcome to Startup Names Generator, please log in below',
+                            style: TextStyle(fontSize: 15)),
+                        SizedBox(height: 12),
+                        TextFormField(
+                          controller: emailController,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        TextFormField(
+                          controller: passwordController,
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                          ),
+                          obscureText: true,
+                        ),
+                        SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () {
+                            // final snackBar = SnackBar(
+                            //   content: Text('Login is not implemented yet'),
+                            // );
+                            // ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                            AuthRepository.instance().signIn(emailController.text, passwordController.text);
+                          },
+                          child: Text('Log in'),
+                          style: ButtonStyle(
+                              backgroundColor:
+                              MaterialStateProperty.all<Color>(Colors.red),
+                              minimumSize:
+                              MaterialStateProperty.all<Size>(Size(300, 30)),
+                              shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(40.0),
+                                  ))),
+                        )
+                      ],
                     ),
-                  )
-                ],
+                  );
+                }
               ),
             ),
           );
         }, // ...to here.
       ),
     );
+  }
+
+  void attemptLogin(String email, String password){
+    AuthRepository.instance().signUp(email, password);
   }
 
   @override
@@ -197,6 +236,29 @@ class _RandomWordsState extends State<RandomWords> {
             _saved.add(pair);
           }
         });
+      },
+    );
+  }
+}
+
+class App extends StatelessWidget {
+  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: _initialization,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+              body: Center(
+                  child: Text(snapshot.error.toString(),
+                      textDirection: TextDirection.ltr)));
+        }
+        if (snapshot.connectionState == ConnectionState.done) {
+          return MyApp();
+        }
+        return Center(child: CircularProgressIndicator());
       },
     );
   }
