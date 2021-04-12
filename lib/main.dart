@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:hello_me/auth_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:developer';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,37 +42,50 @@ class _RandomWordsState extends State<RandomWords> {
       MaterialPageRoute<void>(
         // NEW lines from here...
         builder: (BuildContext context) {
-          final tiles = _saved.map(
-                (WordPair pair) {
-              return ListTile(
-                title: Text(
-                  pair.asPascalCase,
-                  style: _biggerFont,
-                ),
-                trailing: Icon(
-                  Icons.delete_outline,
-                  color: Colors.red,
-                ),
-                onTap: () {
-                  // NEW lines from here...
-                  final snackBar = SnackBar(
-                    content: Text('Deletion is not implemented yet'),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                },
-              );
-            },
-          );
-          final divided = ListTile.divideTiles(
-            context: context,
-            tiles: tiles,
-          ).toList();
-
           return Scaffold(
             appBar: AppBar(
               title: Text('Saved Suggestions'),
             ),
-            body: ListView(children: divided),
+            body: StreamBuilder(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc("WDNBNfc3CJPVGJ2hiNZ3")
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  log(_saved.toString());
+                  return ListView.separated(
+                    itemCount: _saved.length,
+                    separatorBuilder: (context, index) => Divider(),
+                    itemBuilder: (context, index) {
+                      final authRep = AuthRepository.instance();
+                      final user = FirebaseAuth.instance.currentUser;
+                      return ListTile(
+                        title: Text(
+                          _saved.elementAt(index).asPascalCase,
+                          style: _biggerFont,
+                        ),
+                        trailing: Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                        ),
+                        onTap: () {
+                          _saved.remove(_saved.elementAt(index));
+                          if (authRep.isAuthenticated && user != null) {
+                            FirebaseFirestore.instance
+                                .collection('users')
+                                .where('email', isEqualTo: user.email)
+                                .get()
+                                .then((snapshot) {
+                              snapshot.docs.forEach((element) async {
+                                sendToCloud(_saved, element.id);
+                              });
+                            });
+                          }
+                        },
+                      );
+                    },
+                  );
+                }),
           );
         }, // ...to here.
       ),
@@ -118,7 +132,6 @@ class _RandomWordsState extends State<RandomWords> {
                             _saved = combineData(_saved, cloudWordPairs);
                             sendToCloud(_saved, element.id);
                             print(cloudWordPairs);
-                            print("fghghjhjk");
                           });
                         });
                         print(updatedWordPairs);
@@ -151,30 +164,24 @@ class _RandomWordsState extends State<RandomWords> {
                           SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: () {
-                              AuthRepository.instance().signIn(
-                                  emailController.text,
-                                  passwordController.text).then((value) => Navigator.of(context).pop());
+                              AuthRepository.instance()
+                                  .signIn(emailController.text,
+                                      passwordController.text)
+                                  .then((value) => Navigator.of(context).pop());
                             },
                             child: Text('Log in'),
                             style: ButtonStyle(
                                 backgroundColor:
-                                MaterialStateProperty.all<Color>(
-                                    Colors.red),
+                                    MaterialStateProperty.all<Color>(
+                                        Colors.red),
                                 minimumSize: MaterialStateProperty.all<Size>(
                                     Size(300, 30)),
                                 shape: MaterialStateProperty.all<
-                                    RoundedRectangleBorder>(
+                                        RoundedRectangleBorder>(
                                     RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(40.0),
-                                    ))),
+                                  borderRadius: BorderRadius.circular(40.0),
+                                ))),
                           ),
-                          ElevatedButton(
-                            onPressed: () {
-                              AuthRepository.instance().signOut();
-                            },
-                            child: Text('Log out'),
-
-                          )
                         ],
                       ),
                     );
@@ -199,7 +206,9 @@ class _RandomWordsState extends State<RandomWords> {
       wordPairs.add({'first': element.first, 'second': element.second});
     });
     FirebaseFirestore.instance
-        .collection('users').doc(docId).update({'WordPairs': wordPairs});
+        .collection('users')
+        .doc(docId)
+        .update({'WordPairs': wordPairs});
   }
 
   @override
@@ -208,18 +217,24 @@ class _RandomWordsState extends State<RandomWords> {
       create: (context) => AuthRepository.instance(),
       child: StreamBuilder(
         stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot){
+        builder: (context, snapshot) {
           return Scaffold(
             // Add from here...
             appBar: AppBar(
               title: Text('Startup Name Generator'),
-              actions: (AuthRepository.instance().isAuthenticated) ? [
-                IconButton(icon: Icon(Icons.favorite), onPressed: _pushSaved),
-                IconButton(icon: Icon(Icons.exit_to_app), onPressed: signOut ),
-              ]  : [
-                IconButton(icon: Icon(Icons.favorite), onPressed: _pushSaved),
-                IconButton(icon: Icon(Icons.login), onPressed: _pushLogin),
-              ] ,
+              actions: (AuthRepository.instance().isAuthenticated)
+                  ? [
+                      IconButton(
+                          icon: Icon(Icons.favorite), onPressed: _pushSaved),
+                      IconButton(
+                          icon: Icon(Icons.exit_to_app), onPressed: signOut),
+                    ]
+                  : [
+                      IconButton(
+                          icon: Icon(Icons.favorite), onPressed: _pushSaved),
+                      IconButton(
+                          icon: Icon(Icons.login), onPressed: _pushLogin),
+                    ],
             ),
             body: _buildSuggestions(),
           );
@@ -228,7 +243,7 @@ class _RandomWordsState extends State<RandomWords> {
     );
   }
 
-  void signOut(){
+  void signOut() {
     AuthRepository.instance().signOut();
     setState(() {});
   }
