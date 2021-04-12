@@ -7,6 +7,8 @@ import 'package:hello_me/auth_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:developer';
+import 'dart:async';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +38,7 @@ class _RandomWordsState extends State<RandomWords> {
   final _suggestions = <WordPair>[];
   final _biggerFont = const TextStyle(fontSize: 18);
   var _saved = <WordPair>{};
+  StreamController<String> controller = StreamController.broadcast();
 
   void _pushSaved() {
     Navigator.of(context).push(
@@ -49,47 +52,83 @@ class _RandomWordsState extends State<RandomWords> {
             body: StreamBuilder(
                 stream: FirebaseFirestore.instance
                     .collection('users')
-                    .doc("WDNBNfc3CJPVGJ2hiNZ3")
                     .snapshots(),
                 builder: (context, snapshot) {
                   log(_saved.toString());
-                  return ListView.separated(
-                    itemCount: _saved.length,
-                    separatorBuilder: (context, index) => Divider(),
-                    itemBuilder: (context, index) {
-                      final authRep = AuthRepository.instance();
-                      final user = FirebaseAuth.instance.currentUser;
-                      return ListTile(
-                        title: Text(
-                          _saved.elementAt(index).asPascalCase,
-                          style: _biggerFont,
-                        ),
-                        trailing: Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        onTap: () {
-                          _saved.remove(_saved.elementAt(index));
-                          if (authRep.isAuthenticated && user != null) {
-                            FirebaseFirestore.instance
-                                .collection('users')
-                                .where('email', isEqualTo: user.email)
-                                .get()
-                                .then((snapshot) {
-                              snapshot.docs.forEach((element) async {
-                                sendToCloud(_saved, element.id);
-                              });
-                            });
-                          }
+                  return StreamBuilder(
+                    stream: controller.stream,
+                    builder: (context, snapshot){
+                      return ListView.separated(
+                        itemCount: _saved.length,
+                        separatorBuilder: (context, index) => Divider(),
+                        itemBuilder: (context, index) {
+                          final authRep = AuthRepository.instance();
+                          final user = FirebaseAuth.instance.currentUser;
+                          return ListTile(
+                            title: Text(
+                              _saved.elementAt(index).asPascalCase,
+                              style: _biggerFont,
+                            ),
+                            trailing: Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
+                            onTap: () {
+                              if (authRep.isAuthenticated){
+                                removeItem(_saved.elementAt(index));
+                              } else {
+                                _saved.remove(_saved.elementAt(index));
+                                controller.add("changed");
+                              }
+
+                            },
+                          );
                         },
                       );
                     },
+
                   );
                 }),
           );
         }, // ...to here.
       ),
     );
+  }
+
+  void removeItem(WordPair pair) {
+    final authRep = AuthRepository.instance();
+    final user = FirebaseAuth.instance.currentUser;
+    _saved.remove(pair);
+    if (authRep.isAuthenticated && user != null) {
+      FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .get()
+          .then((snapshot) {
+        snapshot.docs.forEach((element) async {
+          sendToCloud(_saved, element.id);
+        });
+      });
+    }
+    setState(() {
+    });
+  }
+
+  void addItem(WordPair pair) {
+    final authRep = AuthRepository.instance();
+    final user = FirebaseAuth.instance.currentUser;
+    _saved.add(pair);
+    if (authRep.isAuthenticated && user != null) {
+      FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: user.email)
+          .get()
+          .then((snapshot) {
+        snapshot.docs.forEach((element) async {
+          sendToCloud(_saved, element.id);
+        });
+      });
+    }
   }
 
   void _pushLogin() {
@@ -134,8 +173,6 @@ class _RandomWordsState extends State<RandomWords> {
                             print(cloudWordPairs);
                           });
                         });
-                        print(updatedWordPairs);
-                        print("asdasdasdasdasdas");
                         // Navigator.of(context).pop();
                       }
                     }
@@ -249,36 +286,32 @@ class _RandomWordsState extends State<RandomWords> {
   }
 
   Widget _buildSuggestions() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      // The itemBuilder callback is called once per suggested
-      // word pairing, and places each suggestion into a ListTile
-      // row. For even rows, the function adds a ListTile row for
-      // the word pairing. For odd rows, the function adds a
-      // Divider widget to visually separate the entries. Note that
-      // the divider may be difficult to see on smaller devices.
-      itemBuilder: (BuildContext _context, int i) {
-        // Add a one-pixel-high divider widget before each row
-        // in the ListView.
-        if (i.isOdd) {
-          return Divider(
-            thickness: 2,
+    return StreamBuilder(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .snapshots(),
+        builder: (context, snapshot){
+          return StreamBuilder(
+              stream: controller.stream,
+              builder: (context, snapshot){
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemBuilder: (BuildContext _context, int i) {
+                    if (i.isOdd) {
+                      return Divider(
+                        thickness: 2,
+                      );
+                    }
+                    final int index = i ~/ 2;
+                    if (index >= _suggestions.length) {
+                      _suggestions.addAll(generateWordPairs().take(10));
+                    }
+                    return _buildRow(_suggestions[index]);
+                  },
+                );
+              }
           );
         }
-
-        // The syntax "i ~/ 2" divides i by 2 and returns an
-        // integer result.
-        // For example: 1, 2, 3, 4, 5 becomes 0, 1, 1, 2, 2.
-        // This calculates the actual number of word pairings
-        // in the ListView,minus the divider widgets.
-        final int index = i ~/ 2;
-        // If you've reached the end of the available word
-        // pairings...
-        if (index >= _suggestions.length) {
-          _suggestions.addAll(generateWordPairs().take(10));
-        }
-        return _buildRow(_suggestions[index]);
-      },
     );
   }
 
@@ -298,9 +331,11 @@ class _RandomWordsState extends State<RandomWords> {
         // NEW lines from here...
         setState(() {
           if (alreadySaved) {
-            _saved.remove(pair);
+            // _saved.remove(pair);
+            removeItem(pair);
           } else {
-            _saved.add(pair);
+            // _saved.add(pair);
+            addItem(pair);
           }
         });
       },
