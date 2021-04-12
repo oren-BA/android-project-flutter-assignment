@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:hello_me/auth_repository.dart';
 import 'package:provider/provider.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-          title: 'Startup Name Generator',
+      title: 'Startup Name Generator',
       theme: ThemeData(
         // Add the 3 lines from here...
         primaryColor: Colors.red,
@@ -34,7 +34,7 @@ class RandomWords extends StatefulWidget {
 class _RandomWordsState extends State<RandomWords> {
   final _suggestions = <WordPair>[];
   final _biggerFont = const TextStyle(fontSize: 18);
-  final _saved = <WordPair>{};
+  var _saved = <WordPair>{};
 
   void _pushSaved() {
     Navigator.of(context).push(
@@ -42,7 +42,7 @@ class _RandomWordsState extends State<RandomWords> {
         // NEW lines from here...
         builder: (BuildContext context) {
           final tiles = _saved.map(
-            (WordPair pair) {
+                (WordPair pair) {
               return ListTile(
                 title: Text(
                   pair.asPascalCase,
@@ -93,68 +93,92 @@ class _RandomWordsState extends State<RandomWords> {
             body: ChangeNotifierProvider(
               create: (context) => AuthRepository.instance(),
               child: StreamBuilder(
-                stream: FirebaseAuth.instance.authStateChanges(),
-                builder: (context, snapshot){
-                  final user = FirebaseAuth.instance.currentUser;
-                  final authRep = AuthRepository.instance();
-                  if (snapshot.hasData){
-                    if(!authRep.isAuthenticated){
-                      final snackBar = SnackBar(
-                        content: Text('Error with login info'),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                    } else{
-                      // Navigator.of(context).pop();
+                  stream: FirebaseAuth.instance.authStateChanges(),
+                  builder: (context, snapshot) {
+                    final authRep = AuthRepository.instance();
+                    if (snapshot.hasData) {
+                      if (!authRep.isAuthenticated) {
+                        final snackBar = SnackBar(
+                          content: Text('Error with login info'),
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                      } else {
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user == null) {
+                          return Center();
+                        } //boilerplate...
+                        var currUser = FirebaseFirestore.instance
+                            .collection('users')
+                            .where('email', isEqualTo: user.email);
+                        var updatedWordPairs;
+                        var cloudWordPairs;
+                        currUser.get().then((snapshot) {
+                          snapshot.docs.forEach((element) async {
+                            cloudWordPairs = await element.data()["WordPairs"];
+                            _saved = combineData(_saved, cloudWordPairs);
+                            sendToCloud(_saved, element.id);
+                            print(cloudWordPairs);
+                            print("fghghjhjk");
+                          });
+                        });
+                        print(updatedWordPairs);
+                        print("asdasdasdasdasdas");
+                        // Navigator.of(context).pop();
+                      }
                     }
-                  }
-                  return Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      children: [
-                        Text(
-                            'Welcome to Startup Names Generator, please log in below',
-                            style: TextStyle(fontSize: 15)),
-                        SizedBox(height: 12),
-                        TextFormField(
-                          controller: emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
+                    return Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        children: [
+                          Text(
+                              'Welcome to Startup Names Generator, please log in below',
+                              style: TextStyle(fontSize: 15)),
+                          SizedBox(height: 12),
+                          TextFormField(
+                            controller: emailController,
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 12),
-                        TextFormField(
-                          controller: passwordController,
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
+                          SizedBox(height: 12),
+                          TextFormField(
+                            controller: passwordController,
+                            decoration: const InputDecoration(
+                              labelText: 'Password',
+                            ),
+                            obscureText: true,
                           ),
-                          obscureText: true,
-                        ),
-                        SizedBox(height: 12),
-                        ElevatedButton(
-                          onPressed: () {
-                            // final snackBar = SnackBar(
-                            //   content: Text('Login is not implemented yet'),
-                            // );
-                            // ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                            AuthRepository.instance().signIn(emailController.text, passwordController.text);
-                          },
-                          child: Text('Log in'),
-                          style: ButtonStyle(
-                              backgroundColor:
-                              MaterialStateProperty.all<Color>(Colors.red),
-                              minimumSize:
-                              MaterialStateProperty.all<Size>(Size(300, 30)),
-                              shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(40.0),
-                                  ))),
-                        )
-                      ],
-                    ),
-                  );
-                }
-              ),
+                          SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: () {
+                              AuthRepository.instance().signIn(
+                                  emailController.text,
+                                  passwordController.text).then((value) => Navigator.of(context).pop());
+                            },
+                            child: Text('Log in'),
+                            style: ButtonStyle(
+                                backgroundColor:
+                                MaterialStateProperty.all<Color>(
+                                    Colors.red),
+                                minimumSize: MaterialStateProperty.all<Size>(
+                                    Size(300, 30)),
+                                shape: MaterialStateProperty.all<
+                                    RoundedRectangleBorder>(
+                                    RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(40.0),
+                                    ))),
+                          ),
+                          ElevatedButton(
+                            onPressed: () {
+                              AuthRepository.instance().signOut();
+                            },
+                            child: Text('Log out'),
+
+                          )
+                        ],
+                      ),
+                    );
+                  }),
             ),
           );
         }, // ...to here.
@@ -162,23 +186,51 @@ class _RandomWordsState extends State<RandomWords> {
     );
   }
 
-  void attemptLogin(String email, String password){
-    AuthRepository.instance().signUp(email, password);
+  Set<WordPair> combineData(Set<WordPair> saved, List data) {
+    for (int i = 0; i < data.length; i++) {
+      saved.add(WordPair(data[i]['first'], data[i]['second']));
+    }
+    return saved;
+  }
+
+  void sendToCloud(Set<WordPair> saved, String docId) {
+    List wordPairs = [];
+    saved.forEach((element) {
+      wordPairs.add({'first': element.first, 'second': element.second});
+    });
+    FirebaseFirestore.instance
+        .collection('users').doc(docId).update({'WordPairs': wordPairs});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // Add from here...
-      appBar: AppBar(
-        title: Text('Startup Name Generator'),
-        actions: [
-          IconButton(icon: Icon(Icons.favorite), onPressed: _pushSaved),
-          IconButton(icon: Icon(Icons.login), onPressed: _pushLogin),
-        ],
+    return ChangeNotifierProvider(
+      create: (context) => AuthRepository.instance(),
+      child: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot){
+          return Scaffold(
+            // Add from here...
+            appBar: AppBar(
+              title: Text('Startup Name Generator'),
+              actions: (AuthRepository.instance().isAuthenticated) ? [
+                IconButton(icon: Icon(Icons.favorite), onPressed: _pushSaved),
+                IconButton(icon: Icon(Icons.exit_to_app), onPressed: signOut ),
+              ]  : [
+                IconButton(icon: Icon(Icons.favorite), onPressed: _pushSaved),
+                IconButton(icon: Icon(Icons.login), onPressed: _pushLogin),
+              ] ,
+            ),
+            body: _buildSuggestions(),
+          );
+        },
       ),
-      body: _buildSuggestions(),
     );
+  }
+
+  void signOut(){
+    AuthRepository.instance().signOut();
+    setState(() {});
   }
 
   Widget _buildSuggestions() {

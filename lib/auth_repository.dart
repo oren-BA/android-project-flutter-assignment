@@ -40,7 +40,6 @@ class AuthRepository with ChangeNotifier {
       print(email);
       notifyListeners();
       await _auth.signInWithEmailAndPassword(email: email, password: password);
-      print("ssssss");
       return true;
     } catch (e) {
       _status = Status.Unauthenticated;
