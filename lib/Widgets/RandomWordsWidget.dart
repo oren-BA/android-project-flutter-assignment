@@ -21,8 +21,6 @@ class _RandomWordsState extends State<RandomWords> {
   var _saved = <WordPair>{};
   StreamController<String> controller = StreamController.broadcast();
 
-
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(

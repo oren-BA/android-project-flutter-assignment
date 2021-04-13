@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:developer';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 
 enum Status { Uninitialized, Authenticated, Authenticating, Unauthenticated }
 
@@ -7,6 +11,7 @@ class AuthRepository with ChangeNotifier {
   FirebaseAuth _auth;
   User? _user;
   Status _status = Status.Uninitialized;
+  StreamController<Status> authController = StreamController.broadcast();
 
   AuthRepository.instance() : _auth = FirebaseAuth.instance {
     _auth.authStateChanges().listen(_onAuthStateChanged);
@@ -23,12 +28,14 @@ class AuthRepository with ChangeNotifier {
   Future<UserCredential?> signUp(String email, String password) async {
     try {
       _status = Status.Authenticating;
+      authController.add(_status);
       notifyListeners();
       return await _auth.createUserWithEmailAndPassword(
           email: email, password: password);
     } catch (e) {
       print(e);
       _status = Status.Unauthenticated;
+      authController.add(_status);
       notifyListeners();
       return null;
     }
@@ -37,13 +44,15 @@ class AuthRepository with ChangeNotifier {
   Future<bool> signIn(String email, String password) async {
     try {
       _status = Status.Authenticating;
-      print(email);
+      log(email.toString());
       notifyListeners();
+      authController.add(_status);
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       return true;
     } catch (e) {
       _status = Status.Unauthenticated;
       notifyListeners();
+      authController.add(_status);
       return false;
     }
   }
