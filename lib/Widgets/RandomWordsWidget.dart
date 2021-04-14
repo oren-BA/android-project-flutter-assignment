@@ -23,36 +23,32 @@ class _RandomWordsState extends State<RandomWords> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => AuthRepository.instance(),
-      child: StreamBuilder(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Startup Name Generator'),
-              actions: (AuthRepository.instance().isAuthenticated)
-                  ? [
-                IconButton(
-                    icon: Icon(Icons.favorite),
-                    onPressed: () =>
-                        pushSaved(context, controller, _saved)),
-                IconButton(
-                    icon: Icon(Icons.exit_to_app), onPressed: signOut),
-              ]
-                  : [
-                IconButton(
-                    icon: Icon(Icons.favorite),
-                    onPressed: () =>
-                        pushSaved(context, controller, _saved)),
-                IconButton(
-                    icon: Icon(Icons.login), onPressed:() => pushLogin(context, _saved)),
-              ],
-            ),
-            body: _buildSuggestions(),
-          );
-        },
-      ),
+    return Consumer<AuthRepository>(
+      builder: (context, authRep, snapshot) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Startup Name Generator'),
+            actions: (AuthRepository.instance().isAuthenticated)
+                ? [
+              IconButton(
+                  icon: Icon(Icons.favorite),
+                  onPressed: () =>
+                      pushSaved(context, controller, _saved)),
+              IconButton(
+                  icon: Icon(Icons.exit_to_app), onPressed: signOut),
+            ]
+                : [
+              IconButton(
+                  icon: Icon(Icons.favorite),
+                  onPressed: () =>
+                      pushSaved(context, controller, _saved)),
+              IconButton(
+                  icon: Icon(Icons.login), onPressed:() => pushLogin(context, _saved)),
+            ],
+          ),
+          body: _buildSuggestions(),
+        );
+      },
     );
   }
 

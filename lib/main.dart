@@ -3,12 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:async';
 import 'package:hello_me/Widgets/RandomWordsWidget.dart';
+import 'package:provider/provider.dart';
+import 'package:hello_me/Provider/auth_repository.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(App());
+  runApp(ChangeNotifierProvider(
+      create: (context) => AuthRepository.instance(),
+      builder: (context, snapshot) {
+        return App();
+      }));
 }
-
 
 class App extends StatelessWidget {
   final Future<FirebaseApp> _initialization = Firebase.initializeApp();
@@ -34,7 +39,6 @@ class App extends StatelessWidget {
 }
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
