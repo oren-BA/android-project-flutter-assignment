@@ -58,7 +58,7 @@ class _SuggestionsListState extends State<SuggestionsListWidget>{
       ),
       trailing: Icon(
         alreadySaved ? Icons.favorite : Icons.favorite_border,
-        color: alreadySaved ? Colors.red : null,
+        color: alreadySaved ? Colors.red[900] : null,
       ),
       onTap: () {
         setState(() {

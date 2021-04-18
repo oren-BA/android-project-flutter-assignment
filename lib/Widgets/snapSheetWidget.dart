@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:hello_me/Provider/auth_repository.dart';
+import 'package:hello_me/Widgets/GrabbingWidget.dart';
 import 'package:hello_me/Widgets/SheetBelowContentWidget.dart';
 import 'package:hello_me/Widgets/suggestionsListWidget.dart';
 import 'package:provider/provider.dart';
@@ -47,35 +48,8 @@ class _SnapSheetWidgetState extends State<SnapSheetWidget> {
       controller: snappingSheetController,
       child: SuggestionsListWidget(widget.suggestions, widget.saved),
       // child: Text("hello"),
-      grabbing: GestureDetector(
-        onTap: () {
-          if (snappingSheetController.currentPosition == 30) {
-            snappingSheetController.snapToPosition(
-              SnappingPosition.pixels(positionPixels: 190),
-            );
-          } else {
-            snappingSheetController.snapToPosition(
-              SnappingPosition.pixels(positionPixels: 30),
-            );
-          }
-        },
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-              sigmaX: widget.xBlurVal, sigmaY: widget.yBlurVal),
-          child: Container(
-              color: Colors.grey[350],
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 5, 0, 10),
-                    child: Text(grabText, style: TextStyle(fontSize: 17)),
-                  ),
-                  Icon(Icons.keyboard_arrow_up)
-                ],
-              )),
-        ),
-      ),
+      grabbing: GrabbingWidget(
+          snappingSheetController, widget.xBlurVal, widget.yBlurVal, grabText),
       initialSnappingPosition: SnappingPosition.pixels(positionPixels: 30),
       snappingPositions: [
         SnappingPosition.pixels(positionPixels: 30),
@@ -87,8 +61,8 @@ class _SnapSheetWidgetState extends State<SnapSheetWidget> {
           draggable: true,
           child: SheetBelowContentWidget()),
       onSheetMoved: (position) {
-        widget.xBlurVal = (position - 30) / 15;
-        widget.yBlurVal = (position - 30) / 15;
+        widget.xBlurVal = (position - 30) / 25;
+        widget.yBlurVal = (position - 30) / 25;
         setState(() {});
       },
     );

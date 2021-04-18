@@ -36,7 +36,7 @@ void pushSaved(
                           ),
                           trailing: Icon(
                             Icons.delete_outline,
-                            color: Colors.red,
+                            color: Colors.red[700],
                           ),
                           onTap: () {
                             if (authRep.isAuthenticated) {
