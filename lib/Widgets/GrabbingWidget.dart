@@ -1,24 +1,7 @@
 import 'dart:ui';
-
-import 'package:english_words/english_words.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:hello_me/Provider/auth_repository.dart';
-import 'package:hello_me/Widgets/SheetBelowContentWidget.dart';
-import 'package:hello_me/Widgets/suggestionsListWidget.dart';
-import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:async';
-import 'package:hello_me/Pages/savedPage.dart';
-import 'package:hello_me/Pages/loginPage.dart';
-import 'package:hello_me/auxFuncs.dart';
 import 'package:snapping_sheet/snapping_sheet.dart';
-import '../Provider/auth_repository.dart';
-import '../Provider/auth_repository.dart';
-import 'package:snapping_sheet/snapping_sheet.dart';
-import 'package:hello_me/Widgets/RandomWordsWidget.dart';
-import 'RandomWordsWidget.dart';
 
 class GrabbingWidget extends StatelessWidget {
   var snappingSheetController;
@@ -26,7 +9,8 @@ class GrabbingWidget extends StatelessWidget {
   double yBlurVal;
   String grabText;
 
-  GrabbingWidget(this.snappingSheetController, this.xBlurVal, this.yBlurVal, this.grabText);
+  GrabbingWidget(this.snappingSheetController, this.xBlurVal, this.yBlurVal,
+      this.grabText);
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +27,7 @@ class GrabbingWidget extends StatelessWidget {
         }
       },
       child: BackdropFilter(
-        filter: ImageFilter.blur(
-            sigmaX: xBlurVal, sigmaY: yBlurVal),
+        filter: ImageFilter.blur(sigmaX: xBlurVal, sigmaY: yBlurVal),
         child: Container(
             color: Colors.grey[350],
             child: Row(

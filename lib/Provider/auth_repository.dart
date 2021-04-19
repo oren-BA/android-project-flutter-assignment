@@ -41,7 +41,6 @@ class AuthRepository with ChangeNotifier {
     try {
       _status = Status.Authenticating;
       notifyListeners();
-      log(email.toString());
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       return true;
     } catch (e) {

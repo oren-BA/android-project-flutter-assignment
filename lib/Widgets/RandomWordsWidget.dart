@@ -1,7 +1,5 @@
 import 'package:english_words/english_words.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:hello_me/Provider/auth_repository.dart';
 import 'package:hello_me/Widgets/suggestionsListWidget.dart';
 import 'package:provider/provider.dart';
@@ -9,10 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'package:hello_me/Pages/savedPage.dart';
 import 'package:hello_me/Pages/loginPage.dart';
-import 'package:hello_me/auxFuncs.dart';
 import 'package:hello_me/Widgets/snapSheetWidget.dart';
-import 'package:snapping_sheet/snapping_sheet.dart';
-import '../Provider/auth_repository.dart';
 import '../Provider/auth_repository.dart';
 
 class RandomWords extends StatefulWidget {
@@ -22,7 +17,6 @@ class RandomWords extends StatefulWidget {
 
 class _RandomWordsState extends State<RandomWords> {
   final _suggestions = <WordPair>[];
-  // final _biggerFont = const TextStyle(fontSize: 18);
   var _saved = <WordPair>{};
   StreamController<String> controller = StreamController.broadcast();
 
@@ -65,24 +59,21 @@ class _RandomWordsState extends State<RandomWords> {
   }
 
   Widget _buildSuggestions() {
-    return Consumer<AuthRepository>(
-      builder: (context, authRep, snapshot){
-        return StreamBuilder(
-            stream: FirebaseFirestore.instance.collection('users').snapshots(),
-            builder: (context, snapshot) {
-              return StreamBuilder(
-                  stream: controller.stream,
-                  builder: (context, snapshot) {
-                    if (authRep.isAuthenticated){
-                      return Scaffold(
-                        body: SnapSheetWidget(_suggestions, _saved),
-                      );
-                    }
-                    return SuggestionsListWidget(_suggestions, _saved);
-                  });
-            });
-      }
-    );
+    return Consumer<AuthRepository>(builder: (context, authRep, snapshot) {
+      return StreamBuilder(
+          stream: FirebaseFirestore.instance.collection('users').snapshots(),
+          builder: (context, snapshot) {
+            return StreamBuilder(
+                stream: controller.stream,
+                builder: (context, snapshot) {
+                  if (authRep.isAuthenticated) {
+                    return Scaffold(
+                      body: SnapSheetWidget(_suggestions, _saved),
+                    );
+                  }
+                  return SuggestionsListWidget(_suggestions, _saved, null);
+                });
+          });
+    });
   }
-
 }

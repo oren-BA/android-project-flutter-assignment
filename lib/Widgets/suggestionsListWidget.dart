@@ -1,35 +1,22 @@
 import 'package:english_words/english_words.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:hello_me/Provider/auth_repository.dart';
-import 'package:provider/provider.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:async';
-import 'package:hello_me/Pages/savedPage.dart';
-import 'package:hello_me/Pages/loginPage.dart';
 import 'package:hello_me/auxFuncs.dart';
 import 'package:snapping_sheet/snapping_sheet.dart';
-import '../Provider/auth_repository.dart';
-import '../Provider/auth_repository.dart';
-import 'package:snapping_sheet/snapping_sheet.dart';
-import 'package:hello_me/Widgets/RandomWordsWidget.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
-import 'RandomWordsWidget.dart';
-
-class SuggestionsListWidget extends StatefulWidget{
+class SuggestionsListWidget extends StatefulWidget {
   List<WordPair> suggestions;
   var saved;
+  var snappingSheetController;
 
-  SuggestionsListWidget(this.suggestions, this.saved);
+  SuggestionsListWidget(
+      this.suggestions, this.saved, this.snappingSheetController);
 
   @override
   _SuggestionsListState createState() => _SuggestionsListState();
-
 }
 
-class _SuggestionsListState extends State<SuggestionsListWidget>{
-
+class _SuggestionsListState extends State<SuggestionsListWidget> {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
@@ -61,6 +48,10 @@ class _SuggestionsListState extends State<SuggestionsListWidget>{
         color: alreadySaved ? Colors.red[900] : null,
       ),
       onTap: () {
+        if (widget.snappingSheetController != null) {
+          widget.snappingSheetController
+              .snapToPosition(SnappingPosition.pixels(positionPixels: 30));
+        }
         setState(() {
           if (alreadySaved) {
             removeItem(widget.saved, pair);

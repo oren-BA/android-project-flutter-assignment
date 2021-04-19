@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hello_me/Provider/auth_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 void removeItem(Set<WordPair> saved, WordPair pair) {
   final authRep = AuthRepository.instance();
   final user = FirebaseAuth.instance.currentUser;
@@ -11,12 +10,10 @@ void removeItem(Set<WordPair> saved, WordPair pair) {
   if (authRep.isAuthenticated && user != null) {
     FirebaseFirestore.instance
         .collection('users')
-        .where('email', isEqualTo: user.email)
+    .doc(user.uid)
         .get()
         .then((snapshot) {
-      snapshot.docs.forEach((element) async {
-        sendToCloud(saved, element.id);
-      });
+        sendToCloud(saved, user.uid);
     });
   }
 }
@@ -39,7 +36,6 @@ Set<WordPair> combineData(Set<WordPair> saved, List data) {
   return saved;
 }
 
-
 void addItem(Set<WordPair> saved, WordPair pair) {
   final authRep = AuthRepository.instance();
   final user = FirebaseAuth.instance.currentUser;
@@ -47,13 +43,10 @@ void addItem(Set<WordPair> saved, WordPair pair) {
   if (authRep.isAuthenticated && user != null) {
     FirebaseFirestore.instance
         .collection('users')
-        .where('email', isEqualTo: user.email)
+        .doc(user.uid)
         .get()
         .then((snapshot) {
-      snapshot.docs.forEach((element) async {
-        sendToCloud(saved, element.id);
-      });
+      sendToCloud(saved, user.uid);
     });
   }
 }
-

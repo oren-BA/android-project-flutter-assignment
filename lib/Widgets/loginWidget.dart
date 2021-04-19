@@ -1,12 +1,10 @@
-import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
 import 'package:english_words/english_words.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:hello_me/Provider/auth_repository.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:hello_me/Widgets/BottomSheetWidget.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hello_me/auxFuncs.dart';
@@ -63,10 +61,9 @@ class _LoginWidgetState extends State<LoginWidget> {
                 if (color == Colors.grey) return;
                 authRep
                     .signIn(emailController.text, passwordController.text)
-                    .then((value) =>
-                authRep.isAuthenticated
-                    ? authenticated(authRep)
-                    : ScaffoldMessenger.of(context).showSnackBar(snackBar));
+                    .then((value) => authRep.isAuthenticated
+                        ? authenticated(authRep)
+                        : ScaffoldMessenger.of(context).showSnackBar(snackBar));
               },
               child: Text('Log in'),
               style: ButtonStyle(
@@ -74,91 +71,26 @@ class _LoginWidgetState extends State<LoginWidget> {
                   minimumSize: MaterialStateProperty.all<Size>(Size(350, 35)),
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                       RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(40.0),
-                      ))),
+                    borderRadius: BorderRadius.circular(40.0),
+                  ))),
             );
           }),
           Consumer<AuthRepository>(builder: (context, authRep, snapshot) {
             return ElevatedButton(
               onPressed: () {
-                showMaterialModalBottomSheet(
-                    context: context,
-                    // isScrollControlled: true,
-                    builder: (context) {
-                      return AnimatedPadding(
-                        padding: MediaQuery
-                            .of(context)
-                            .viewInsets,
-                        duration: const Duration(milliseconds: 100),
-                        curve: Curves.decelerate,
-                        child: SingleChildScrollView(
-                          child:
-                          Column(mainAxisSize: MainAxisSize.min, children: [
-                            Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Text(
-                                    "Please confirm your password below",
-                                    style: TextStyle(fontSize: 15),
-                                  ),
-                                )),
-                            Divider(),
-                            Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: TextFormField(
-                                // autofocus: true,
-                                controller: bottomSheetController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Password',
-                                ),
-                                obscureText: true,
-                              ),
-                            ),
-                            Divider(),
-                            Padding(
-                              padding: const EdgeInsets.all(12.0),
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  if (passwordController.text ==
-                                      bottomSheetController.text &&
-                                      emailController.text != "") {
-                                    createUser(authRep, emailController.text,
-                                        passwordController.text);
-                                  } else {
-                                    final snackBar = SnackBar(
-                                      content: Text('Passwords must match'),
-                                    );
-                                    Navigator.of(context).pop();
-                                    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                                  }
-                                },
-                                child: Text('Confirm'),
-                                style: ButtonStyle(
-                                  backgroundColor:
-                                  MaterialStateProperty.all<Color>(
-                                      Colors.green[700]!),
-                                  minimumSize: MaterialStateProperty.all<Size>(
-                                      Size(90, 35)),
-                                ),
-                              ),
-                            )
-                          ]),
-                        ),
-                      );
-                    });
+                BottomSheetWidget(context, this, authRep);
               },
               child: Text('New user? Click to sign up'),
               style: ButtonStyle(
                   backgroundColor:
-                  MaterialStateProperty.all<Color>(Colors.green[700]!),
+                      MaterialStateProperty.all<Color>(Colors.green[700]!),
                   minimumSize: MaterialStateProperty.all<Size>(Size(350, 35)),
                   shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                       RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(40.0),
-                      ))),
+                    borderRadius: BorderRadius.circular(40.0),
+                  ))),
             );
           }),
-
         ],
       ),
     );
@@ -168,27 +100,27 @@ class _LoginWidgetState extends State<LoginWidget> {
     if (authRep.isAuthenticated) {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        var currUser = FirebaseFirestore.instance
-            .collection('users')
-            .where('email', isEqualTo: user.email);
+        var currUserDoc =
+            FirebaseFirestore.instance.collection('users').doc(user.uid);
         var cloudWordPairs;
-        currUser.get().then((snapshot) {
-          snapshot.docs.forEach((element) async {
-            cloudWordPairs = await element.data()["WordPairs"];
-            widget.saved = combineData(widget.saved, cloudWordPairs);
-            sendToCloud(widget.saved, element.id);
-            print(cloudWordPairs);
-          });
+        currUserDoc.get().then((snapshot) async {
+          cloudWordPairs = await snapshot.data()!["WordPairs"];
+          widget.saved = combineData(widget.saved, cloudWordPairs);
+          sendToCloud(widget.saved, user.uid);
+          print(cloudWordPairs);
         });
       }
     }
     Navigator.of(context).pop();
   }
 
-  void createUser(AuthRepository authRep, String email, String password) async{
-      UserCredential newUser = (await authRep.signUp(email, password))!;
-      FirebaseFirestore.instance.collection("users").doc(newUser.user!.uid).set({"email": email, "WordPairs": {}});
-      authenticated(authRep);
-      Navigator.of(context).pop();
+  void createUser(AuthRepository authRep, String email, String password) async {
+    UserCredential newUser = (await authRep.signUp(email, password))!;
+    FirebaseFirestore.instance
+        .collection("users")
+        .doc(newUser.user!.uid)
+        .set({"email": email, "WordPairs": {}});
+    authenticated(authRep);
+    Navigator.of(context).pop();
   }
 }
