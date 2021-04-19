@@ -1,16 +1,12 @@
-# hello_me
+# dry questions
 
-A new Flutter application.
+1) the class of the controller is SnappingSheetController. 
+  it allows various features like - 
+    a. extracting information from the sheet such as currentPosition, currentSnappingPosition, currentlySnapping, isAttached. 
+    b. changing the state of the sheet like snapping it to a position, stopping the current snapping and set the snapping sheet position. 
+    c. listening to changes of the sheet and acting on it - onSheetMoved (the one i used to blur the background widget), onSnapCompleted, onSnapStart.
+    
+2)s
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+3) advantage of InkWell: InkWell provides an "ink splash" animation where the user has tapped, indicating the user that the tap has been registered.
+   advantage of GestureDetector: GestureDetector provides a much broader variety of Gestures than InkWell such as "onForcePress" and "onLongPress" which allows        better control on our app
