@@ -8,5 +8,5 @@
     
 2) s
 
-3) advantage of InkWell: InkWell provides an "ink splash" animation where the user has tapped, indicating the user that the tap has been registered.  
-   advantage of GestureDetector: GestureDetector provides a much broader variety of Gestures than InkWell such as "onForcePress" and "onLongPress" which allows        better control on our app.
+3) -advantage of InkWell: InkWell provides an "ink splash" animation where the user has tapped, indicating the user that the tap has been registered.  
+   -advantage of GestureDetector: GestureDetector provides a much broader variety of Gestures than InkWell such as "onForcePress" and "onLongPress" which allows        better control on our app.
