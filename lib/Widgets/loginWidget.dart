@@ -11,8 +11,8 @@ import 'package:hello_me/auxFuncs.dart';
 
 class LoginWidget extends StatefulWidget {
   Set<WordPair> saved = {};
-
-  LoginWidget(this.saved);
+  var wordsList;
+  LoginWidget(this.saved, this.wordsList);
 
   @override
   _LoginWidgetState createState() => _LoginWidgetState();
@@ -107,10 +107,12 @@ class _LoginWidgetState extends State<LoginWidget> {
           cloudWordPairs = await snapshot.data()!["WordPairs"];
           widget.saved = combineData(widget.saved, cloudWordPairs);
           sendToCloud(widget.saved, user.uid);
-          print(cloudWordPairs);
         });
       }
     }
+    widget.wordsList.setState(() {
+
+    });
     Navigator.of(context).pop();
   }
 

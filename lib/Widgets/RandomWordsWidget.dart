@@ -44,13 +44,19 @@ class _RandomWordsState extends State<RandomWords> {
                             pushSaved(context, controller, _saved)),
                     IconButton(
                         icon: Icon(Icons.login),
-                        onPressed: () => pushLogin(context, _saved)),
+                        onPressed: () => pushLogin(context, _saved, this)),
                   ],
           ),
           body: _buildSuggestions(),
         );
       },
     );
+  }
+
+  void setStateWidget(){
+    setState(() {
+
+    });
   }
 
   void signOut(AuthRepository authRep) {

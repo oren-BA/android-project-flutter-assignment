@@ -2,7 +2,7 @@ import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:hello_me/Widgets/loginWidget.dart';
 
-void pushLogin(BuildContext context, Set<WordPair> saved) {
+void pushLogin(BuildContext context, Set<WordPair> saved, var wordsList) {
 
   Navigator.of(context).push(
     MaterialPageRoute<void>(
@@ -12,7 +12,7 @@ void pushLogin(BuildContext context, Set<WordPair> saved) {
             title: Text('Login'),
             centerTitle: true,
           ),
-          body: LoginWidget(saved),
+          body: LoginWidget(saved, wordsList),
         );
       },
     ),
